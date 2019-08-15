@@ -3,6 +3,8 @@ var axios = require("axios");
 var keys = require("./keys.js");
 var Spotify = require('node-spotify-api');
 var fs = require("fs");
+var moment = require("moment");
+
 
 var spotify = new Spotify({
     id : keys.spotify.id,
@@ -13,31 +15,54 @@ var spotify = new Spotify({
 
 
         //Needs work\\
-//**************************//
-// -Rotten tomatoes score
+//*******************************//          
 // -Mr Nobody on no movie submit
-// -Bandsintown
-// -Spotify
-//
-//
-//
-//
-//**************************//
+//*******************************//
 
 
 
 var command = process.argv[2];
 
-
+if(command === "commands"){
+    console.log("\nspotify-this-song  " + "\nconcert-this" + "\nmovie-this" + "\ndo-what-it-says");
+}
 
 if(command === "do-what-it-says"){
     fs.readFile("random.txt", "utf8", function(error, data){
-        console.log("do works"); //delete this check\\
-        console.log(data);
-       
-        
-    });
+        if(error){
+            console.log(error);
+        }
+
+        var dataArr = data.split(" ");
+
+     var song = "";
+     for(i = 1; i < dataArr.length; i++){
+        song += dataArr[i] + " ";
+     }
+
+spotify.search({ type: 'track', query: song, limit: 1 }, function(err, data) { //search for song
+    if (err) {
+      return console.log('Error occurred: ' + err);
+    }
+    
+    //catching paths into variables
+    var songName = data.tracks.items[0].name;
+    var artist = data.tracks.items[0].album.artists[0].name;
+    var album = data.tracks.items[0].album.name;
+    var link = data.tracks.items[0].album.external_urls.spotify;
+
+    //Display song stats
+    console.log("\nSong Name: " + songName + 
+                "\nArtist Name: " + artist +
+                "\nAlbum Name: " + album +
+                "\nClick here to listen! " + link);
+  }); 
+
+});
 }
+
+
+
 
                                             //begin spotify
 if(command === "spotify-this-song"){
@@ -47,26 +72,22 @@ var song = "";
        song += process.argv[i] + " ";
     }
 
-spotify.search({ type: 'track', query: song, limit: 1 }, function(err, data) {
+spotify.search({ type: 'track', query: song, limit: 1 }, function(err, data) { //search for song
     if (err) {
       return console.log('Error occurred: ' + err);
     }
-
+    
     //catching paths into variables
-    var songName = (data.tracks.items[0].name);
-    var artist = (data.tracks.items[0].album.artists[0].name);
+    var songName = data.tracks.items[0].name;
+    var artist = data.tracks.items[0].album.artists[0].name;
     var album = data.tracks.items[0].album.name;
     var link = data.tracks.items[0].album.external_urls.spotify;
 
-
-    console.log("Song Name: " + songName + 
+    //Display song stats
+    console.log("\nSong Name: " + songName + 
                 "\nArtist Name: " + artist +
                 "\nAlbum Name: " + album +
                 "\nClick here to listen! " + link);
-    
-
- 
-
   }); 
 }
 
@@ -74,16 +95,37 @@ spotify.search({ type: 'track', query: song, limit: 1 }, function(err, data) {
 
                                             //begin Bands In Town\\
 if(command === "concert-this"){
-console.log("band worked"); //delete this check\\
 
-var artist = process.argv[3]; // get band name from user
+var artist = ""; // get band name from user
+for(i = 3; i < process.argv.length; i++){
+    artist += process.argv[i] + "";
+ }
 
 var bandUrl = "https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp"; // use artist to make search URL
-axios.get(bandUrl).then(function(response){
-    for (i in response) {
-        console.log(response.request.ClientRequest);
-      }
 
+axios.get(bandUrl).then(function(response){
+    var showData = response.data;
+    
+    console.log("\nThe next 5 upcoming shows" +
+                 "\n -----------------------"   );
+
+    for (var i = 0; i < 5; i++) {
+        var show = showData[i];
+        // Print data about each concert
+        // If a concert doesn't have a region, display the country instead
+        // Use moment to format the date
+        console.log(
+            show.venue.city +
+            "," +
+            (show.venue.region || show.venue.country) +
+            " at " +
+            show.venue.name +
+            " " +
+            moment(show.datetime).format("MM/DD/YYYY") +
+            "\n"
+        );
+    }
+     
 });
 }
 
@@ -91,59 +133,28 @@ axios.get(bandUrl).then(function(response){
 
                                             // begin OMBD
 if(command === "movie-this"){
-   console.log("movie worked");//delete this check\\
+     // get movie name from user
+     
+var movieName = "";
+    for(i = 3; i < process.argv.length; i++){
+        
+       movieName += process.argv[i] + " ";
+    }
 
-var movieName = process.argv[3]; // get movie name from user
 
 var movieUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy"; // use movieName to make search URL
 
-axios.get(movieUrl).then(function(response){ //take url and get movie stats
+    axios.get(movieUrl).then(function(response){ //take url and get movie stats
     
-    console.log(response.data); //<---delete when finished
-   
-    console.log(response.data.Title + 
+    //display movie stats
+    console.log("\n" + response.data.Title + 
         "\nThis movie was released in " + response.data.Year + 
         "\nRated: " + response.data.Rated + 
-        "\nRotten Tomatoes rating placeholder" + 
+        "\n" + response.data.Ratings[1].Source + ": " + response.data.Ratings[1].Value +
         "\nCountry of origin: " + response.data.Country +
         "\nLanguage: " + response.data.Language + 
         "\nPlot: " + response.data.Plot + 
         "\nCast: " + response.data.Actors);
-    
 
-
-    //console.log(respone.data.Ratings.Source) <-- beginning to get to Rotten tomatoes 
-});
-}
-
-
-
-function spotifySearch(){
-    // get song name from user
-    var song = "";
-        for(i = 3; i < process.argv.length; i++){
-           song += process.argv[i] + " ";
-        }
-    
-    spotify.search({ type: 'track', query: song, limit: 1 }, function(err, data) {
-        if (err) {
-          return console.log('Error occurred: ' + err);
-        }
-    
-        //catching paths into variables
-        var songName = (data.tracks.items[0].name);
-        var artist = (data.tracks.items[0].album.artists[0].name);
-        var album = data.tracks.items[0].album.name;
-        var link = data.tracks.items[0].album.external_urls.spotify;
-    
-    
-        console.log("Song Name: " + songName + 
-                    "\nArtist Name: " + artist +
-                    "\nAlbum Name: " + album +
-                    "\nClick here to listen! " + link);
-        
-    
-     
-    
     });
 }
