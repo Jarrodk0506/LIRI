@@ -6,27 +6,23 @@ var fs = require("fs");
 var moment = require("moment");
 
 
+//get spotify ID and secret
 var spotify = new Spotify({
     id : keys.spotify.id,
     secret : keys.spotify.secret
 })
   
 
-
-
-        //Needs work\\
-//*******************************//          
-// -Mr Nobody on no movie submit
-//*******************************//
-
-
+//capture users input 
 
 var command = process.argv[2];
 
+//show commands if asked
 if(command === "commands"){
     console.log("\nspotify-this-song  " + "\nconcert-this" + "\nmovie-this" + "\ndo-what-it-says");
 }
 
+//do what it says
 if(command === "do-what-it-says"){
     fs.readFile("random.txt", "utf8", function(error, data){
         if(error){
@@ -133,12 +129,11 @@ axios.get(bandUrl).then(function(response){
 
                                             // begin OMBD
 if(command === "movie-this"){
+
+var movieName= process.argv.slice(3).join(" ");
      // get movie name from user
-     
-var movieName = "";
-    for(i = 3; i < process.argv.length; i++){
-        
-       movieName += process.argv[i] + " ";
+    if(!movieName){
+        movieName = "Mr Nobody";
     }
 
 
